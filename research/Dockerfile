@@ -1,0 +1,34 @@
+FROM tensorflow/tensorflow:latest
+
+RUN apt-get update
+RUN apt-get install --yes python-pil \
+  python-lxml \
+  python-tk \
+  wget 
+
+RUN pip install --upgrade pip
+
+RUN groupadd tensorflow 
+RUN useradd --create-home --gid tensorflow --shell /bin/bash tensorflow 
+USER tensorflow:tensorflow
+
+ENV PATH="/home/tensorflow/.local/bin:${PATH}"
+RUN pip install --user Cython \
+    contextlib2 \
+    jupyter \
+    matplotlib
+
+RUN mkdir /home/tensorflow/research/
+# COPY --chown=tensorflow . /home/tensorflow/research/
+
+WORKDIR /home/tensorflow/
+RUN wget -O protobuf.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip && \
+  unzip protobuf.zip && \
+  rm -rf protobuf.zip readme.txt && \
+  chmod 744 bin/protoc
+ENV PATH="/home/tensorflow/bin:${PATH}"
+
+VOLUME /home/tensorflow/research/
+WORKDIR /home/tensorflow/research/
+ENV PYTHONPATH="/home/tensorflow/research:/home/tensorflow/research/slim:${PYTHONPATH}"
+ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
